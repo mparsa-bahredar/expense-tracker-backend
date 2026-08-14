@@ -1,32 +1,35 @@
-import {
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-} from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
 
-
-export class CreateTransactionDto {
-  @IsNumber()
-  categoryId!: number;
-
-  @IsNumber()
-  @Min(0)
-  amount!: number;
-
+export class TransactionQueryDto {
+  @IsOptional()
   @IsIn(["INCOME", "EXPENSE"])
-  type!: "INCOME" | "EXPENSE";
+  type?: "INCOME" | "EXPENSE";
+
+  @IsOptional()
+  @IsInt()
+  categoryId?: number;
+
+  @IsOptional()
+  @IsInt()
+  accountId?: number;
 
   @IsOptional()
   @IsString()
-  description?: string;
+  from?: string;
 
   @IsOptional()
-  @IsNumber()
-  bankAccountId?: number;
+  @IsString()
+  to?: string;
 
   @IsOptional()
-  @IsNumber()
-  walletId?: number;
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsIn(["amount", "createdAt"])
+  sortBy?: "amount" | "createdAt";
+
+  @IsOptional()
+  @IsIn(["asc", "desc"])
+  order?: "asc" | "desc";
 }

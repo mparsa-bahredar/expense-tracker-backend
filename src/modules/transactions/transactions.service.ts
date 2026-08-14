@@ -1,174 +1,150 @@
 import { prisma } from "../../../prisma/prisma";
 
-
-
-export class TransactionsService {
-
-
-    async getTransactions(userId: number) {
-        return await prisma.transaction.findMany({
-        where: { userId },
-        include: {
-            category: true,
-            bankAccount: true,
-            wallet: true,
-        },
-        orderBy: {
-            createdAt: "desc",
+export class TransactionService {
+    async create(data: {
+        userId: number;
+        amount: number;
+        type: "INCOME" | "EXPENSE";
+        description?: string;
+        categoryId: number;
+        accountId?: number;
+    }) {
+        return prisma.transaction.create({
+        data: {
+            userId: data.userId,
+            amount: data.amount,
+            type: data.type,
+            description: data.description,
+            categoryId: data.categoryId,
+            accountId: data.accountId,
         },
         });
     }
 
-    async getTransactionById(id: number, userId: number) {
-        const transaction = await prisma.transaction.findFirst({
+    async getAll(
+        userId: number,
+        filters?: {
+        type?: "INCOME" | "EXPENSE";
+        categoryId?: number;
+        accountId?: number;
+        from?: string;
+        to?: string;
+        search?: string;
+        sortBy?: "amount" | "createdAt";
+        order?: "asc" | "desc";
+        }
+    ) {
+        return prisma.transaction.findMany({
+        where: {
+            userId,
+
+            ...(filters?.type && {
+            type: filters.type,
+            }),
+
+            ...(filters?.categoryId && {
+            categoryId: filters.categoryId,
+            }),
+
+            ...(filters?.accountId && {
+            accountId: filters.accountId,
+            }),
+
+            ...(filters?.search && {
+            description: {
+                contains: filters.search,
+                mode: "insensitive",
+            },
+            }),
+
+            ...(filters?.from || filters?.to
+            ? {
+                createdAt: {
+                    ...(filters.from && {
+                    gte: new Date(filters.from),
+                    }),
+
+                    ...(filters.to && {
+                    lte: new Date(filters.to),
+                    }),
+                },
+                }
+            : {}),
+        },
+
+        orderBy: {
+            [filters?.sortBy || "createdAt"]:
+            filters?.order || "desc",
+        },
+
+        include: {
+            category: true,
+            account: true,
+        },
+        });
+    }
+
+    async getOne(userId: number, id: number) {
+        return prisma.transaction.findFirst({
         where: {
             id,
             userId,
         },
         include: {
             category: true,
-            bankAccount: true,
-            wallet: true,
+            account: true,
         },
         });
-
-        if (!transaction) {
-        throw new Error("تراکنش پیدا نشد");
-        }
-
-        return transaction;
     }
 
-    async createTransaction(
+    async update(
         userId: number,
-        categoryId: number,
-        amount: number,
-        type: "INCOME" | "EXPENSE",
-        description?: string,
-        bankAccountId?: number,
-        walletId?: number
+        id: number,
+        data: {
+        amount?: number;
+        type?: "INCOME" | "EXPENSE";
+        description?: string;
+        categoryId?: number;
+        accountId?: number;
+        }
     ) {
-        if (!bankAccountId && !walletId) {
-        throw new Error("حساب بانکی یا کیف پول الزامی است");
-        }
-
-        if (bankAccountId && walletId) {
-        throw new Error("فقط یکی از حساب بانکی یا کیف پول را انتخاب کنید");
-        }
-
-        return await prisma.$transaction(async (tx) => {
-        const transaction = await tx.transaction.create({
-            data: {
-            userId,
-            categoryId,
-            amount,
-            type,
-            description,
-            bankAccountId,
-            walletId,
-            },
-        });
-
-        const balanceChange = type === "INCOME" ? amount : -amount;
-
-        if (bankAccountId) {
-            const account = await tx.bankAccount.findFirst({
-            where: {
-                id: bankAccountId,
-                userId,
-            },
-            });
-
-            if (!account) {
-            throw new Error("حساب بانکی پیدا نشد");
-            }
-
-            await tx.bankAccount.update({
-            where: {
-                id: bankAccountId,
-            },
-            data: {
-                balance: {
-                increment: balanceChange,
-                },
-            },
-            });
-        }
-
-        if (walletId) {
-            const wallet = await tx.wallet.findFirst({
-            where: {
-                id: walletId,
-                userId,
-            },
-            });
-
-            if (!wallet) {
-            throw new Error("کیف پول پیدا نشد");
-            }
-
-            await tx.wallet.update({
-            where: {
-                id: walletId,
-            },
-            data: {
-                balance: {
-                increment: balanceChange,
-                },
-            },
-            });
-        }
-
-        return transaction;
-        });
-    }
-
-    async deleteTransaction(id: number, userId: number) {
-        const transaction = await this.getTransactionById(id, userId);
-
-        return await prisma.$transaction(async (tx) => {
-        const balanceChange =
-            transaction.type === "INCOME"
-            ? -transaction.amount
-            : transaction.amount;
-
-        if (transaction.bankAccountId) {
-            await tx.bankAccount.update({
-            where: {
-                id: transaction.bankAccountId,
-            },
-            data: {
-                balance: {
-                increment: balanceChange,
-                },
-            },
-            });
-        }
-
-        if (transaction.walletId) {
-            await tx.wallet.update({
-            where: {
-                id: transaction.walletId,
-            },
-            data: {
-                balance: {
-                increment: balanceChange,
-                },
-            },
-            });
-        }
-
-        await tx.transaction.delete({
-            where: {
+        return prisma.transaction.updateMany({
+        where: {
             id,
-            },
-        });
+            userId,
+        },
+        data: {
+            ...(data.amount !== undefined && {
+            amount: data.amount,
+            }),
 
-        return true;
+            ...(data.type !== undefined && {
+            type: data.type,
+            }),
+
+            ...(data.description !== undefined && {
+            description: data.description,
+            }),
+
+            ...(data.categoryId !== undefined && {
+            categoryId: data.categoryId,
+            }),
+
+            ...(data.accountId !== undefined && {
+            accountId: data.accountId,
+            }),
+        },
         });
     }
 
-
+    async delete(userId: number, id: number) {
+        return prisma.transaction.deleteMany({
+        where: {
+            id,
+            userId,
+        },
+        });
+    }
 }
 
-export default TransactionsService;
+export default TransactionService;

@@ -9,7 +9,8 @@ import transactionsRoutes from "../src/modules/transactions/transactions.routes"
 import dashboardRoutes from "../src/modules/dashboard/dashboard.routes"
 import reportsRoutes from "../src/modules/reports/reports.routes"
 import budgetRoutes from "../src/modules/budgets/budget.routes";
-import goalRoutes from "../src/modules/goals/goal.routes";
+import goalRoutes from "./modules/goals/goals.routes";
+import bankAccountRoutes from "../src/modules/bankAccounts/bankAccounts.routes";
 
 
 const router = Router();
@@ -34,6 +35,7 @@ router.use("/budgets", budgetRoutes);
 
 router.use("/goals", goalRoutes);
 
+router.use("/bank-accounts", bankAccountRoutes);
 
 
 export default router;

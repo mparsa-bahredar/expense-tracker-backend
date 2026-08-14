@@ -1,85 +1,106 @@
 import { prisma } from "../../../prisma/prisma";
 
 
-export class BankAccountsService {
 
+export class BankAccountService {
 
-    async getBankAccounts(userId: number) {
-        return await prisma.bankAccount.findMany({
+    async create(data: {
+    userId: number;
+    bankName: string;
+    accountNumber?: string;
+    cardNumber: string;
+    balance: number;
+    }) {
+    return prisma.bankAccount.create({
+        data: {
+        userId: data.userId,
+        bankName: data.bankName,
+        accountNumber: data.accountNumber,
+        cardNumber: data.cardNumber,
+        balance: data.balance,
+        },
+    });
+    }
+
+    async getAll(
+        userId: number,
+        filters?: {
+        search?: string;
+        sortBy?: "balance" | "createdAt";
+        order?: "asc" | "desc";
+        }
+    ) {
+        return prisma.bankAccount.findMany({
         where: {
             userId,
+
+            ...(filters?.search && {
+            bankName: {
+                contains: filters.search,
+                mode: "insensitive",
+            },
+            }),
+        },
+
+        orderBy: {
+            [filters?.sortBy || "createdAt"]:
+            filters?.order || "desc",
         },
         });
     }
 
-    async getBankAccountById(id: number, userId: number) {
-        const account = await prisma.bankAccount.findFirst({
+    async getOne(userId: number, id: number) {
+        return prisma.bankAccount.findFirst({
         where: {
             id,
             userId,
         },
         });
-
-        if (!account) {
-        throw new Error("حساب بانکی پیدا نشد");
-        }
-
-        return account;
     }
 
-
-    async createBankAccount(
+    async update(
         userId: number,
-        bankName: string,
-        cardNumber: string,
-        balance: number
-    ) {
-        return await prisma.bankAccount.create({
-        data: {
-            userId,
-            bankName,
-            cardNumber,
-            balance,
-        },
-        });
-    }
-
-
-    async updateBankAccount(
         id: number,
-        userId: number,
-        bankName?: string,
-        cardNumber?: string,
-        balance?: number
+        data: {
+        bankName?: string;
+        accountNumber?: string;
+        cardNumber?: string;
+        balance?: number;
+        }
     ) {
-        const account = await this.getBankAccountById(id, userId);
-
-        return await prisma.bankAccount.update({
+        return prisma.bankAccount.updateMany({
         where: {
-            id: account.id,
+            id,
+            userId,
         },
         data: {
-            bankName,
-            cardNumber,
-            balance,
+            ...(data.bankName !== undefined && {
+            bankName: data.bankName,
+            }),
+
+            ...(data.accountNumber !== undefined && {
+            accountNumber: data.accountNumber,
+            }),
+
+            ...(data.cardNumber !== undefined && {
+            cardNumber: data.cardNumber,
+            }),
+
+            ...(data.balance !== undefined && {
+            balance: data.balance,
+            }),
         },
         });
     }
 
-    
-    async deleteBankAccount(id: number, userId: number) {
-        const account = await this.getBankAccountById(id, userId);
-
-        await prisma.bankAccount.delete({
+    async delete(userId: number, id: number) {
+        return prisma.bankAccount.deleteMany({
         where: {
-            id: account.id,
+            id,
+            userId,
         },
         });
-
-        return true;
     }
-
-
 }
 
-export default BankAccountsService;
+export default BankAccountService;

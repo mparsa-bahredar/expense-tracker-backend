@@ -1,16 +1,13 @@
 import { Router } from "express";
-import CategoriesController from "./categories.controller";
-
+import CategoryController from "./categories.controller";
 
 const router = Router();
-const categoriesController = new CategoriesController();
+const categoryController = new CategoryController();
 
-
-router.get("/", (req, res) => categoriesController.getCategories(req, res));
-router.get("/:id", (req, res) => categoriesController.getCategoryById(req, res));
-router.post("/", (req, res) => categoriesController.createCategory(req, res));
-router.put("/:id", (req, res) => categoriesController.updateCategory(req, res));
-router.delete("/:id", (req, res) => categoriesController.deleteCategory(req, res));
-
+router.post("/", (req, res) => categoryController.create(req, res));
+router.get("/", (req, res) => categoryController.getAll(req, res));
+router.get("/:id", (req, res) => categoryController.getOne(req, res));
+router.put("/:id", (req, res) => categoryController.update(req, res));
+router.delete("/:id", (req, res) => categoryController.delete(req, res));
 
 export default router;

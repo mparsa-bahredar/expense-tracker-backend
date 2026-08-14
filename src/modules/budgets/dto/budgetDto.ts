@@ -1,9 +1,19 @@
-import { IsInt, IsNumber } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
 
-export class CreateBudgetDto {
+export class BudgetQueryDto {
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @IsInt()
-  categoryId!: number;
+  categoryId?: number;
 
-  @IsNumber()
-  amount!: number;
+  @IsOptional()
+  @IsIn(["amount", "createdAt"])
+  sortBy?: "amount" | "createdAt";
+
+  @IsOptional()
+  @IsIn(["asc", "desc"])
+  order?: "asc" | "desc";
 }

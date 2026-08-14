@@ -1,18 +1,15 @@
-import { IsIn, IsString, MinLength } from "class-validator";
+import { IsIn, IsOptional, IsString } from "class-validator";
 
-
-export class CreateCategoryDto {
+export class CategoryQueryDto {
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  name!: string;
+  search?: string;
 
-  @IsIn(["INCOME", "EXPENSE"])
-  type!: "INCOME" | "EXPENSE";
-}
+  @IsOptional()
+  @IsIn(["name", "createdAt"])
+  sortBy?: "name" | "createdAt";
 
-
-export class UpdateCategoryDto {
-  @IsString()
-  @MinLength(2)
-  name!: string;
+  @IsOptional()
+  @IsIn(["asc", "desc"])
+  order?: "asc" | "desc";
 }

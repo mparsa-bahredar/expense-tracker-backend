@@ -1,76 +1,102 @@
 import { Request, Response } from "express";
-import CategoriesService from "./categories.service";
+import CategoryService from "./categories.service";
 
+const categoryService = new CategoryService();
 
-const categoriesService = new CategoriesService();
+export class CategoryController {
+  async create(req: Request, res: Response) {
+    try {
+      const category = await categoryService.create({
+        userId: Number(req.body.userId),
+        name: req.body.name,
+      });
 
-
-export class CategoriesController {
-
-
-    async getCategories(req: Request, res: Response) {
-        try {
-            const { userId } = req.body;
-            const categories = await categoriesService.getCategories(Number(userId));
-            return res.status(200).json({ categories });
-        } 
-        catch (error) {
-            return res.status(400).json({ message: error instanceof Error ? error.message : "خطایی رخ داد" });
-        }
+      return res.status(201).json({ category });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "خطایی رخ داد",
+      });
     }
+  }
 
-    
-    async getCategoryById(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const { userId } = req.body;
-            const category = await categoriesService.getCategoryById(Number(id), Number(userId));
-            return res.status(200).json({ category });
-        } 
-        catch (error) {
-            return res.status(400).json({ message: error instanceof Error ? error.message : "خطایی رخ داد" });
-        }
+  async getAll(req: Request, res: Response) {
+    try {
+      const filters = {
+        search: req.query.search as string | undefined,
+
+        sortBy: req.query.sortBy as
+          | "name"
+          | "createdAt"
+          | undefined,
+
+        order: req.query.order as
+          | "asc"
+          | "desc"
+          | undefined,
+      };
+
+      const categories = await categoryService.getAll(
+        Number(req.body.userId),
+        filters
+      );
+
+      return res.status(200).json({ categories });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "خطایی رخ داد",
+      });
     }
+  }
 
+  async getOne(req: Request, res: Response) {
+    try {
+      const category = await categoryService.getOne(
+        Number(req.body.userId),
+        Number(req.params.id)
+      );
 
-    async createCategory(req: Request, res: Response) {
-        try {
-            const { userId, name, type } = req.body;
-            const category = await categoriesService.createCategory(Number(userId), name, type);
-            return res.status(201).json({ message: "دسته‌بندی با موفقیت ایجاد شد", category });
-        } 
-        catch (error) {
-            return res.status(400).json({ message: error instanceof Error ? error.message : "خطایی رخ داد" });
-        }
+      return res.status(200).json({ category });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "خطایی رخ داد",
+      });
     }
+  }
 
-
-    async updateCategory(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const { userId, name } = req.body;
-            const category = await categoriesService.updateCategory(Number(id), Number(userId), name);
-            return res.status(200).json({ message: "دسته‌بندی با موفقیت ویرایش شد", category });
-        } 
-        catch (error) {
-            return res.status(400).json({ message: error instanceof Error ? error.message : "خطایی رخ داد" });
+  async update(req: Request, res: Response) {
+    try {
+      const result = await categoryService.update(
+        Number(req.body.userId),
+        Number(req.params.id),
+        {
+          name: req.body.name,
         }
+      );
+
+      return res.status(200).json({ result });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "خطایی رخ داد",
+      });
     }
+  }
 
+  async delete(req: Request, res: Response) {
+    try {
+      await categoryService.delete(
+        Number(req.body.userId),
+        Number(req.params.id)
+      );
 
-    async deleteCategory(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-            const { userId } = req.body;
-            await categoriesService.deleteCategory(Number(id), Number(userId));
-            return res.status(200).json({ message: "دسته‌بندی با موفقیت حذف شد" });
-        } 
-        catch (error) {
-            return res.status(400).json({ message: error instanceof Error ? error.message : "خطایی رخ داد" });
-        }
+      return res.status(200).json({
+        message: "دسته‌بندی حذف شد",
+      });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "خطایی رخ داد",
+      });
     }
-
-
+  }
 }
 
-export default CategoriesController;
+export default CategoryController;

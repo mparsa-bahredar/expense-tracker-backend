@@ -1,58 +1,53 @@
 import { Request, Response } from "express";
-import ReportsService from "./reports.service";
+import ReportService from "./reports.service";
 
-const reportsService = new ReportsService();
+const reportService = new ReportService();
 
-export class ReportsController {
-  async getSummary(req: Request, res: Response) {
+export class ReportController {
+  async getTransactions(req: Request, res: Response) {
     try {
-      const { userId } = req.body;
+      const filters = {
+        startDate: req.query.startDate as string | undefined,
 
-      const report = await reportsService.getSummary(
-        Number(userId)
-      );
+        endDate: req.query.endDate as string | undefined,
 
-      return res.status(200).json({ report });
-    } catch (error) {
-      return res.status(400).json({
-        message:
-          error instanceof Error
-            ? error.message
-            : "خطایی رخ داد",
-      });
-    }
-  }
+        type: req.query.type as
+          | "INCOME"
+          | "EXPENSE"
+          | undefined,
 
-  async getMonthlyReport(req: Request, res: Response) {
-    try {
-      const { userId } = req.body;
+        categoryId: req.query.categoryId
+          ? Number(req.query.categoryId)
+          : undefined,
 
-      const report =
-        await reportsService.getMonthlyReport(
-          Number(userId)
+        bankAccountId: req.query.bankAccountId
+          ? Number(req.query.bankAccountId)
+          : undefined,
+
+        walletId: req.query.walletId
+          ? Number(req.query.walletId)
+          : undefined,
+
+        sortBy: req.query.sortBy as
+          | "amount"
+          | "createdAt"
+          | undefined,
+
+        order: req.query.order as
+          | "asc"
+          | "desc"
+          | undefined,
+      };
+
+      const transactions =
+        await reportService.getTransactions(
+          Number(req.body.userId),
+          filters
         );
 
-      return res.status(200).json({ report });
-    } catch (error) {
-      return res.status(400).json({
-        message:
-          error instanceof Error
-            ? error.message
-            : "خطایی رخ داد",
+      return res.status(200).json({
+        transactions,
       });
-    }
-  }
-
-  async getCategoryReport(req: Request, res: Response) {
-    try {
-      const { userId } = req.body;
-
-      const report =
-        await reportsService.getCategoryReport(
-          Number(userId)
-        );
-
-      return res.status(200).json({ report });
     } catch (error) {
       return res.status(400).json({
         message:
@@ -64,4 +59,4 @@ export class ReportsController {
   }
 }
 
-export default ReportsController;
+export default ReportController;

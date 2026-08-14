@@ -1,117 +1,66 @@
 import { prisma } from "../../../prisma/prisma";
 
-export class ReportsService {
-  async getSummary(userId: number) {
-    const income = await prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: "INCOME",
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const expense = await prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: "EXPENSE",
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const totalIncome = Number(income._sum.amount || 0);
-    const totalExpense = Number(expense._sum.amount || 0);
-
-    return {
-      totalIncome,
-      totalExpense,
-      totalSavings: totalIncome - totalExpense,
-    };
-  }
-
-  async getMonthlyReport(userId: number) {
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId,
-      },
-      select: {
-        amount: true,
-        type: true,
-        createdAt: true,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
-    const report: Record<string, {
-      income: number;
-      expense: number;
-    }> = {};
-
-    for (const transaction of transactions) {
-      const month = transaction.createdAt
-        .toISOString()
-        .slice(0, 7);
-
-      if (!report[month]) {
-        report[month] = {
-          income: 0,
-          expense: 0,
-        };
-      }
-
-      if (transaction.type === "INCOME") {
-        report[month].income += Number(transaction.amount);
-      } else {
-        report[month].expense += Number(transaction.amount);
-      }
+export class ReportService {
+  async getTransactions(
+    userId: number,
+    filters?: {
+      startDate?: string;
+      endDate?: string;
+      type?: "INCOME" | "EXPENSE";
+      categoryId?: number;
+      bankAccountId?: number;
+      walletId?: number;
+      sortBy?: "amount" | "createdAt";
+      order?: "asc" | "desc";
     }
-
-    return Object.entries(report).map(
-      ([month, data]) => ({
-        month,
-        income: data.income,
-        expense: data.expense,
-        savings: data.income - data.expense,
-      })
-    );
-  }
-
-  async getCategoryReport(userId: number) {
-    const report = await prisma.transaction.groupBy({
-      by: ["categoryId"],
+  ) {
+    return prisma.transaction.findMany({
       where: {
         userId,
-        type: "EXPENSE",
+
+        ...(filters?.startDate || filters?.endDate
+          ? {
+              createdAt: {
+                ...(filters.startDate && {
+                  gte: new Date(filters.startDate),
+                }),
+
+                ...(filters.endDate && {
+                  lte: new Date(filters.endDate),
+                }),
+              },
+            }
+          : {}),
+
+        ...(filters?.type && {
+          type: filters.type,
+        }),
+
+        ...(filters?.categoryId && {
+          categoryId: filters.categoryId,
+        }),
+
+        ...(filters?.bankAccountId && {
+          bankAccountId: filters.bankAccountId,
+        }),
+
+        ...(filters?.walletId && {
+          walletId: filters.walletId,
+        }),
       },
-      _sum: {
-        amount: true,
+
+      orderBy: {
+        [filters?.sortBy || "createdAt"]:
+          filters?.order || "desc",
+      },
+
+      include: {
+        category: true,
+        bankAccount: true,
+        wallet: true,
       },
     });
-
-    const categories = await prisma.category.findMany({
-      where: {
-        id: {
-          in: report.map(item => item.categoryId),
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-
-    return report.map(item => ({
-      category: categories.find(
-        category => category.id === item.categoryId
-      )?.name,
-      amount: Number(item._sum.amount || 0),
-    }));
   }
 }
 
-export default ReportsService;
+export default ReportService;

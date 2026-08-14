@@ -1,37 +1,82 @@
 import { prisma } from "../../../prisma/prisma";
 
+export class CategoryService {
+  async create(data: {
+    userId: number;
+    name: string;
+  }) {
+    return prisma.category.create({
+      data: {
+        userId: data.userId,
+        name: data.name,
+      },
+    });
+  }
 
-export class CategoriesService {
-
-
-    async getCategories(userId: number) {
-        return await prisma.category.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+  async getAll(
+    userId: number,
+    filters?: {
+      search?: string;
+      sortBy?: "name" | "createdAt";
+      order?: "asc" | "desc";
     }
+  ) {
+    return prisma.category.findMany({
+      where: {
+        userId,
 
-    async getCategoryById(id: number, userId: number) {
-        const category = await prisma.category.findFirst({ where: { id, userId } });
-        if (!category) throw new Error("دسته‌بندی پیدا نشد");
-        return category;
+        ...(filters?.search && {
+          name: {
+            contains: filters.search,
+            mode: "insensitive",
+          },
+        }),
+      },
+
+      orderBy: {
+        [filters?.sortBy || "createdAt"]:
+          filters?.order || "desc",
+      },
+    });
+  }
+
+  async getOne(userId: number, id: number) {
+    return prisma.category.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+  }
+
+  async update(
+    userId: number,
+    id: number,
+    data: {
+      name?: string;
     }
+  ) {
+    return prisma.category.updateMany({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        ...(data.name !== undefined && {
+          name: data.name,
+        }),
+      },
+    });
+  }
 
-    async createCategory(userId: number, name: string, type: "INCOME" | "EXPENSE") {
-        const existingCategory = await prisma.category.findFirst({ where: { userId, name, type } });
-        if (existingCategory) throw new Error("این دسته‌بندی قبلاً وجود دارد");
-        return await prisma.category.create({ data: { userId, name, type } });
-    }
-
-    async updateCategory(id: number, userId: number, name: string) {
-        await this.getCategoryById(id, userId);
-        return await prisma.category.update({ where: { id }, data: { name } });
-    }
-
-    async deleteCategory(id: number, userId: number) {
-        await this.getCategoryById(id, userId);
-        await prisma.category.delete({ where: { id } });
-        return true;
-    }
-
-
+  async delete(userId: number, id: number) {
+    return prisma.category.deleteMany({
+      where: {
+        id,
+        userId,
+      },
+    });
+  }
 }
 
-export default CategoriesService;
+export default CategoryService;

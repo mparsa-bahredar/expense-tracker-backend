@@ -1,26 +1,27 @@
 import { Router } from "express";
-import TransactionsController from "./transactions.controller";
-
+import TransactionController from "./transactions.controller";
 
 const router = Router();
-const transactionsController = new TransactionsController();
+const transactionController = new TransactionController();
 
+router.post("/", (req, res) =>
+  transactionController.create(req, res)
+);
 
 router.get("/", (req, res) =>
-  transactionsController.getTransactions(req, res)
+  transactionController.getAll(req, res)
 );
 
 router.get("/:id", (req, res) =>
-  transactionsController.getTransactionById(req, res)
+  transactionController.getOne(req, res)
 );
 
-router.post("/", (req, res) =>
-  transactionsController.createTransaction(req, res)
+router.put("/:id", (req, res) =>
+  transactionController.update(req, res)
 );
 
 router.delete("/:id", (req, res) =>
-  transactionsController.deleteTransaction(req, res)
+  transactionController.delete(req, res)
 );
-
 
 export default router;

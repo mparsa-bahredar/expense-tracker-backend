@@ -1,13 +1,30 @@
-import { IsDateString, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+} from "class-validator";
 
-export class CreateGoalDto {
+export class GoalQueryDto {
+  @IsOptional()
   @IsString()
-  title!: string;
-
-  @IsNumber()
-  targetAmount!: number;
+  search?: string;
 
   @IsOptional()
-  @IsDateString()
-  deadline?: string;
+  @IsIn([
+    "targetAmount",
+    "currentAmount",
+    "createdAt",
+  ])
+  sortBy?:
+    | "targetAmount"
+    | "currentAmount"
+    | "createdAt";
+
+  @IsOptional()
+  @IsIn(["asc", "desc"])
+  order?: "asc" | "desc";
+
+  @IsOptional()
+  @IsIn(["upcoming", "passed"])
+  deadline?: "upcoming" | "passed";
 }

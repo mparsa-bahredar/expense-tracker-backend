@@ -1,19 +1,65 @@
 import { prisma } from "../../../prisma/prisma";
 
 export class BudgetService {
-  async create(userId: number, categoryId: number, amount: number) {
+  async create(data: {
+    userId: number;
+    categoryId: number;
+    amount: number;
+  }) {
     return prisma.budget.create({
       data: {
-        userId,
-        categoryId,
-        amount,
+        userId: data.userId,
+        categoryId: data.categoryId,
+        amount: data.amount,
+      },
+      include: {
+        category: true,
       },
     });
   }
 
-  async getAll(userId: number) {
+  async getAll(
+    userId: number,
+    filters?: {
+      search?: string;
+      categoryId?: number;
+      sortBy?: "amount" | "createdAt";
+      order?: "asc" | "desc";
+    }
+  ) {
     return prisma.budget.findMany({
       where: {
+        userId,
+
+        ...(filters?.categoryId && {
+          categoryId: filters.categoryId,
+        }),
+
+        ...(filters?.search && {
+          category: {
+            name: {
+              contains: filters.search,
+              mode: "insensitive",
+            },
+          },
+        }),
+      },
+
+      orderBy: {
+        [filters?.sortBy || "createdAt"]:
+          filters?.order || "desc",
+      },
+
+      include: {
+        category: true,
+      },
+    });
+  }
+
+  async getOne(userId: number, id: number) {
+    return prisma.budget.findFirst({
+      where: {
+        id,
         userId,
       },
       include: {
@@ -25,7 +71,10 @@ export class BudgetService {
   async update(
     userId: number,
     id: number,
-    amount: number
+    data: {
+      categoryId?: number;
+      amount?: number;
+    }
   ) {
     return prisma.budget.updateMany({
       where: {
@@ -33,7 +82,13 @@ export class BudgetService {
         userId,
       },
       data: {
-        amount,
+        ...(data.categoryId !== undefined && {
+          categoryId: data.categoryId,
+        }),
+
+        ...(data.amount !== undefined && {
+          amount: data.amount,
+        }),
       },
     });
   }
