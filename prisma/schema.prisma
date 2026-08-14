@@ -33,6 +33,8 @@ model User {
   wallet              Wallet?
   categories          Category[]
   transactions        Transaction[]
+  budgets             Budget[]
+  goals               Goal[]
 }
 
 model BankAccount {
@@ -74,6 +76,7 @@ model Category {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  budgets      Budget[]
 
   @@unique([userId, name, type])
 }
@@ -99,4 +102,31 @@ model Transaction {
   category    Category     @relation(fields: [categoryId], references: [id])
   bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
   wallet      Wallet?      @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  categoryId Int
+  amount     Decimal
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+model Goal {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  title         String
+  targetAmount  Decimal
+  currentAmount Decimal   @default(0)
+  deadline      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
